@@ -52,8 +52,9 @@
   - No official formula
     - Nthreads = Ncpu * Ucpu * (1 + W/C)
 - Sending an `HttpRequest`
-  - `HttpClient` -> `UserClient` -> decorators -> `HttpClientDelegate` -> `HttpSesionHandler`
-  - Brings an `EventLoop` in the `UserClient`.
+  - `HttpClient` -> `UserClient` -> HTTP decorators -> `HttpClientDelegate` -> `HttpSesionHandler`
+  - Creates a `ClientRequestContext` in `UserClient`
+  - Brings an `EventLoop`.
     - [`EventLoopScheduler.acquire()`](https://github.com/line/armeria/blob/0296b6cb71945cf0871ac957e896fe95b8c64151/core/src/main/java/com/linecorp/armeria/client/EventLoopScheduler.java#L54)
     - Stores all the `EventLoop`s in the `Map` whose key is `Endpoint.authority()`
     - `EventLoop`s are managed in a binary heap, using active request count and `eventloop` id.
@@ -73,4 +74,4 @@
 
 ### Thrift client
 
-- `HelloSerivce.Iface()` or `AsyncIface()` -> `THttpClientInvocationHandler` -> `DefaultTHttpClient(UserClient)` -> decorators -> `THttpClientDelegate` -> decorators -> `HttpClientDelegate`
+- `HelloSerivce.Iface()` or `AsyncIface()` -> `THttpClientInvocationHandler` -> `DefaultTHttpClient(UserClient)` -> RPC decorators -> `THttpClientDelegate` -> HTTP decorators -> `HttpClientDelegate`
