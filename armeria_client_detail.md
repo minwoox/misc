@@ -7,7 +7,7 @@
   - [Specification for the JVM](https://github.com/reactive-streams/reactive-streams-jvm/blob/master/README.md)
 - Reactive Streams implementations in Armeria
   - `DefaultStreamMessage`
-  - `DefferedStreamMessage`
+  - `DeferredStreamMessage`
   - `EventLoopStreamMessage`
   - `FilteredStreamMessage`
   - `FixedStreamMessage`
