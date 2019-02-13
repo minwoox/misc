@@ -52,19 +52,16 @@
   - No official formula
     - Nthreads = Ncpu * Ucpu * (1 + W/C)
 - Sending an `HttpRequest`
-  - `HttpClient` -> `UserClient` -> HTTP decorators -> `HttpClientDelegate` -> `HttpSesionHandler`
+  - `HttpClient` -> `UserClient` -> HTTP decorators -> `HttpClientDelegate` -> `HttpSessionHandler`
   - Creates a `ClientRequestContext` in `UserClient`
   - Brings an `EventLoop`.
     - [`EventLoopScheduler.acquire()`](https://github.com/line/armeria/blob/0296b6cb71945cf0871ac957e896fe95b8c64151/core/src/main/java/com/linecorp/armeria/client/EventLoopScheduler.java#L54)
     - Stores all the `EventLoop`s in the `Map` whose key is `Endpoint.authority()`
     - `EventLoop`s are managed in a binary heap, using active request count and `eventloop` id.
   - The `EventLoop` is [used to subscribe](https://github.com/line/armeria/blob/bc8abec3d0a3f1d52746643372b1dbabe5bf853c/core/src/main/java/com/linecorp/armeria/client/HttpSessionHandler.java#L145)
-    - So the treads who call `HttpClient.execute()` and write to the `Channel` can be different.
+    - So the thread who calls `HttpClient.execute()` and write to the `Channel` can be different.
 - Receiving an `HttpResponse`
   - The thread who writes to the response is the `EventLoop` you used when sending the `Request`.
-  - Uses a [default subscriber](https://github.com/line/armeria/blob/bc8abec3d0a3f1d52746643372b1dbabe5bf853c/core/src/main/java/com/linecorp/armeria/common/stream/AbstractStreamMessage.java#L81) when you call `aggregate()` to subscribe the `HttpResponse`.
-    - `Eventloop` if the thread who is calling `aggregate()` has a `RequestContext`.
-    - Armeria common worker otherwise.
 
 ### Connection pooling
 
