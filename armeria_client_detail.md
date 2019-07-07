@@ -5,38 +5,47 @@
 - What is Reactive Streams?
   - An initiative to provide a standard for asynchronous stream processing with non-blocking back pressure.
   - [Specification for the JVM](https://github.com/reactive-streams/reactive-streams-jvm/blob/master/README.md)
+  - `Publisher`, `Subscriber`, `Subscription` and `Processor`
+  - Simplified subscription flow
+    - `Subscriber` subscribes the `Publisher` with `Publisher.subsribe(Subscriber)`.
+    - `Publisher` creates a `Subscription`.
+    - `Subscriber.onSubscribe(Subscription)` is called.
+    - `Subscription.request(demands)` is called in the `Subscriber` code.
+    - `Subscriber.onNext(element)` to pass data to the `Subscriber`.
+    - `Subscriber.onComplete()` or `Subscriber.onError(throwable)` is called depending on the situation.
 - Reactive Streams implementations in Armeria
-  - `DefaultStreamMessage`
-  - `DeferredStreamMessage`
-  - `EventLoopStreamMessage`
-  - `FilteredStreamMessage`
-  - `FixedStreamMessage`
-    - `EmptyFixedStreamMessage`
-    - `OneElementFixedStreamMessage`
-    - `TwoElementFixedStreamMessage`
-  - `AbstractStreamMessageDuplicator`
-- Simplified subscription flow
-  - `Subscriber` subscribes the `Publisher` with `Publisher.subsribe(Subscriber)`.
-  - `Publisher` creates a `Subscription`.
-  - `Subscriber.onSubscribe(Subscription)` is called.
-  - `Subscription.request(demands)` is called in the `Subscriber` code.
-  - `Subscriber.onNext(element)` to pass data to the `Subscriber`.
-  - `Subscriber.onComplete()` or `Subscriber.onError(throwable)` is called depending on the situation.
-- How to use it in Armeria?
-  - `HttpRequestSubscriber`
-    - `HttpClient` sends an `HttpRequest` when using `execute(...)`, `get()` and so on, which is one of `StreamMessage`s.
-    - `HttpRequestSubscriber` subscribes the `StreamMessage`.
-      - It writes the header first.
-      - If the write was successful, `operationComplete` is called which is a method of `ChannelFutureListener`.
-      - Then, it calls `subscription.request(1)`.
-      - `onNext(HttpObject)` is called, and it writes the object and it goes on and on until it consumes all the elements.
-  - `HttpResponseSubscriber` is used by server side.
-  - `HttpMessageAggregator`
-    - `HttpClient.execute(...)` returns an `HttpResponse` which is one of `StreamMessage`s
-    - You can aggregate the `HttpResponse` using `HttpResponse.aggregate()`.
-    - Then, it will return a `CompletableFuture<AggregatedHttpMessage>`.
-    - In `HttpResponse.aggregate()`, `HttpMessageAggregator` which is a `Subscriber`, subscribes the `StreamMessage` and it collects all the response.
-    
+  - `Publisher` (`StreamMessage`)
+    - `HttpRequest` and `HttpResponse` implement it
+    - `DefaultStreamMessage`
+      - Queue based
+    - `AbstractStreamMessageDuplicator`
+      - What if we want the elements from multiple places?
+    - `FixedStreamMessage`
+      - `EmptyFixedStreamMessage`
+      - `OneElementFixedStreamMessage`
+      - `TwoElementFixedStreamMessage`
+    - `FilteredStreamMessage`
+      - What if we want to add some header in the decorator?
+    - `DeferredStreamMessage`
+  - Let's implement my own subscriber.
+  - `Subscriber`
+    - `HttpMessageAggregator`
+      - `HttpClient.execute(...)` returns an `HttpResponse` which is one of `StreamMessage`s
+      - You can aggregate the `HttpResponse` using `HttpResponse.aggregate()`.
+      - Then, it will return a `CompletableFuture<AggregatedHttpMessage>`.
+      - In `HttpResponse.aggregate()`, `HttpMessageAggregator` which is a `Subscriber`, subscribes
+      the `StreamMessage` and it collects all the response.
+    - `HttpRequestSubscriber`
+      - `HttpClient` sends an `HttpRequest` when calling `execute(...)`, `get()` and so on.
+      - `HttpRequestSubscriber` subscribes the `StreamMessage`.
+        - It writes the header first.
+        - If the write was successful, `operationComplete` is called which is a method of `ChannelFutureListener`.
+        - Then, it calls `subscription.request(1)`.
+        - `onNext(HttpObject)` is called, and it writes the object and it goes on and on until
+        it consumes all the elements.
+      - `Http1ResponseDecoder` implements `ChannelInboundHandler`.
+    - `HttpResponseSubscriber` is used by the server side.
+
 ### Event Loop
 
 - Who does the all jobs above?
