@@ -15,7 +15,7 @@
     - `Subscriber.onComplete()` or `Subscriber.onError(throwable)` is called depending on the situation.
 - Reactive Streams implementations in Armeria
   - `Publisher` (`StreamMessage`)
-    - `HttpRequest` and `HttpResponse` implement it
+    - `HttpRequest` and `HttpResponse` extends it
     - `DefaultStreamMessage`
       - Queue based
     - `AbstractStreamMessageDuplicator`
@@ -27,12 +27,13 @@
     - `FilteredStreamMessage`
       - What if we want to add some header in the decorator?
     - `DeferredStreamMessage`
-  - Let's implement my own subscriber.
+      - Deferred?
+  - Let's implement our own subscriber.
   - `Subscriber`
     - `HttpMessageAggregator`
-      - `HttpClient.execute(...)` returns an `HttpResponse` which is one of `StreamMessage`s
+      - `HttpClient.execute(...)` returns an `HttpResponse`.
       - You can aggregate the `HttpResponse` using `HttpResponse.aggregate()`.
-      - Then, it will return a `CompletableFuture<AggregatedHttpMessage>`.
+      - Then, it will return a `CompletableFuture<AggregatedHttpResponse>`.
       - In `HttpResponse.aggregate()`, `HttpMessageAggregator` which is a `Subscriber`, subscribes
       the `StreamMessage` and it collects all the response.
     - `HttpRequestSubscriber`
@@ -45,11 +46,13 @@
         it consumes all the elements.
       - `Http1ResponseDecoder` implements `ChannelInboundHandler`.
     - `HttpResponseSubscriber` is used by the server side.
-
+    - Let's build a simple decorating service.
+  - The difference between `HttpRequest` and `HttpResponse`
+  
 ### Event Loop
 
 - Who does the all jobs above?
-- What is Event loop?
+- What is the event loop?
   - A general term which waits for and dispatches events or messages in a program.
   - We use `EventLoop` in Netty.
     - Handles all the I/O operations for a `Channel` once registered.
@@ -57,9 +60,14 @@
     - `EventLoop` extends Java's `ScheduledExecutorService`.
     - Events and Tasks are executed in order received.
     - Let's see what it really does with [`EpollEventLoop`](https://github.com/netty/netty/blob/05e5ab1ecb98963604d686c1f59b2196cf73e244/transport-native-epoll/src/main/java/io/netty/channel/epoll/EpollEventLoop.java#L257)
+  - From the point of view of the `EventLoop`s   
 - How many `EventLoop`s ?
   - No official formula
     - Nthreads = Ncpu * Ucpu * (1 + W/C)
+- Let's build a simple reactive server.
+    
+### Request flow
+
 - Sending an `HttpRequest`
   - `HttpClient` -> `UserClient` -> HTTP decorators -> `HttpClientDelegate` -> `HttpSessionHandler`
   - Creates a `ClientRequestContext` in `UserClient`
@@ -71,13 +79,27 @@
     - So the thread who calls `HttpClient.execute()` and write to the `Channel` can be different.
 - Receiving an `HttpResponse`
   - The thread who writes to the response is the `EventLoop` you used when sending the `Request`.
+- Thrift client
+  - `HelloSerivce.Iface()` or `AsyncIface()` -> `THttpClientInvocationHandler` -> `DefaultTHttpClient(UserClient)` ->
+  RPC decorators -> `THttpClientDelegate` -> HTTP decorators -> `HttpClientDelegate`
+  
+### `RequestContext`
+
+- Thread-local storage
+  - `makeContextAware`
 
 ### Connection pooling
 
+- How many connections we have?
+  - HTTP/1.1
+    - What's the [pipelining](https://en.wikipedia.org/wiki/HTTP_pipelining)?
+    - [In Armeria](https://github.com/line/armeria/blob/armeria-0.88.0/core/src/main/java/com/linecorp/armeria/client/HttpClientDelegate.java#L224)
+  - HTTP/2
+    - Why is it possible just to have one connection?
+      - What Content-length header is for?
+    - [Frame format](https://tools.ietf.org/html/rfc7540#section-4.1)
+  
 - Creates a [`PoolKey`](https://github.com/line/armeria/blob/d90aea4704982df06251c1132bbc4da33301725d/core/src/main/java/com/linecorp/armeria/client/HttpClientDelegate.java#L104) with host, ip, port and session protocol.
 - Gets a [`KeyedChannelPool`](https://github.com/line/armeria/blob/d90aea4704982df06251c1132bbc4da33301725d/core/src/main/java/com/linecorp/armeria/client/HttpClientFactory.java#L289) using the `EventLoop`.
-- Gets a healthy `Channel` from the pool using the key.
 
-### Thrift client
-
-- `HelloSerivce.Iface()` or `AsyncIface()` -> `THttpClientInvocationHandler` -> `DefaultTHttpClient(UserClient)` -> RPC decorators -> `THttpClientDelegate` -> HTTP decorators -> `HttpClientDelegate`
+### Let's build a proxy server
