@@ -19,6 +19,7 @@ dependencies {
     compile 'com.linecorp.armeria:armeria'
 
     testCompile 'com.linecorp.armeria:armeria-testing-junit'
+    testCompile 'com.linecorp.armeria:armeria-testing-junit4'
     testCompile 'org.assertj:assertj-core:3.13.2'
     testCompile 'org.awaitility:awaitility:4.0.1'
 }

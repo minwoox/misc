@@ -59,7 +59,7 @@
     - One `EventLoop` instance usually handles more than one `Channel` but this may depend on implementation details and internals.
     - `EventLoop` extends Java's `ScheduledExecutorService`.
     - Events and Tasks are executed in order received.
-    - Let's see what it really does with [`EpollEventLoop`](https://github.com/netty/netty/blob/05e5ab1ecb98963604d686c1f59b2196cf73e244/transport-native-epoll/src/main/java/io/netty/channel/epoll/EpollEventLoop.java#L257)
+    - Let's see what it really does with [`EpollEventLoop`](https://github.com/netty/netty/blob/4.1/transport/src/main/java/io/netty/channel/nio/NioEventLoop.java#L445)
   - From the point of view of the `EventLoop`s   
 - How many `EventLoop`s ?
   - No official formula
