@@ -24,6 +24,7 @@
       signing.secretKeyRingFile=/Users/Yourname/.gnupg/secring.gpg
       ossrhUsername=
       ossrhPassword=
+      systemProp.org.gradle.internal.publish.checksums.insecure=true
       ```
   - If you don't have the secring.gpg file, then create it using:
     - "gpg --export-secret-key yourKeyId  > ~/.gnupg/secring.gpg"
