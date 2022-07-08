@@ -50,4 +50,5 @@ hs_err_pid*
 *.tmp
 *.bak
 *.swp
+*.DS_Store
 
